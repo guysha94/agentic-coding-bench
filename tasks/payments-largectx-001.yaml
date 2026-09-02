@@ -1,0 +1,67 @@
+id: payments-largectx-001
+name: Audit the whole repository and produce a consistency report plus fixes
+category: large_context
+difficulty: hard
+version: 1
+
+repository:
+  path: ./fixtures/payment-service
+  base_commit: main
+  isolation: worktree
+
+task:
+  prompt: |
+    Perform a repository-wide consistency audit and act on it.
+
+    1. Read every source file under `src/` and every test under `tests/`.
+    2. Produce `AUDIT.md` at the repository root containing, as markdown:
+       - A `## Layers` section listing each layer directory and, for each, every module in
+         it with a one-line description.
+       - A `## Dependency direction` section stating, for each layer, which layers it
+         imports from — derived from the actual import statements, not from the README.
+       - A `## Error mapping` section: a markdown table of every error class in
+          `payments.domain.errors` and the HTTP status the API layer maps it to, with
+         `unmapped` for any error class the API does not handle explicitly.
+       - A `## Findings` section listing every inconsistency you found.
+    3. There is at least one domain error class that the API layer never maps to a
+       specific status code, so it would surface as a 500. Identify it, add the correct
+       mapping (409 is the right status for it), and note the fix under `## Findings`.
+    4. Every public method on `PaymentService` and `PaymentAPI` must have a docstring.
+       Add any that are missing, describing actual behaviour.
+
+    Do not change existing behaviour beyond the error mapping in step 3.
+
+timeout_minutes: 40
+
+validation:
+  - name: unit-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: lint
+    kind: lint
+    command: $ACB_PYTHON -m ruff check . || true
+  - name: hidden-audit-checks
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_audit.py
+    provides_files:
+      tests/hidden_test_audit.py: hidden/payments-largectx-001/hidden_test_audit.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_no_regressions: true
+
+language: python
+framework: pytest
+tool_call_budget: 60
+expected_files:
+  - AUDIT.md
+  - src/payments/api/routes.py
+expected_solution: >
+  Requires reading essentially the whole repository and holding it in context long enough
+  to cross-reference errors against their API mappings. `DuplicatePayment` is defined in
+  the domain layer but never mapped in ERROR_STATUS. Hidden checks verify the report
+  covers every module and error class, so an agent that loses track of earlier discoveries
+  produces an incomplete report.
+tags: [python, large-context, audit, documentation]

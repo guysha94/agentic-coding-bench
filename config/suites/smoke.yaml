@@ -1,0 +1,8 @@
+id: smoke
+name: Smoke suite
+description: >
+  Two fast, cheap tasks used to verify the harness and a target's credentials before
+  committing to a full run. Not a quality measurement.
+tasks:
+  - payments-bug-001
+  - payments-understanding-001

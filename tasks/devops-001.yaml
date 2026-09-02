@@ -1,0 +1,79 @@
+id: devops-001
+name: Fix the broken container, compose, CI and health-check tooling
+category: devops
+difficulty: medium
+version: 1
+
+repository:
+  path: ./fixtures/devops-stack
+  base_commit: main
+  isolation: worktree
+
+task:
+  prompt: |
+    This service's infrastructure files are in poor shape. Fix them.
+
+    1. `Dockerfile`
+       - Pin a slim base image rather than the full `python:3.12` image.
+       - Set an explicit `WORKDIR`.
+       - Copy and install dependencies BEFORE copying the application source, so that
+         layer caching works.
+       - Run as a non-root user.
+       - Add a `HEALTHCHECK` that probes the service's `/health` endpoint.
+       - Use exec-form `CMD`.
+
+    2. `docker-compose.yml`
+       - `ports` must map a host port to the container port, not expose a bare port.
+       - `depends_on` is malformed and will not parse; fix the syntax.
+       - The `worker` service references `app/worker.py`, which does not exist. Remove
+         the worker service rather than inventing one.
+
+    3. `.github/workflows/ci.yml`
+       - The action versions are outdated and `python-version: 3.1` is wrong.
+       - The test path `test/` does not exist in this repository.
+       - Fix the workflow so it would actually run this project's tests.
+
+    4. `scripts/healthcheck.sh`
+       - Rewrite it so it polls `/health` with a bounded number of retries, exits 0 on
+         success and non-zero on failure, uses `set -euo pipefail`, and defaults `PORT`
+         to 8080 when unset.
+
+    Do not change the application code in `app/`. The existing tests must still pass.
+
+timeout_minutes: 25
+
+validation:
+  - name: app-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: shell-syntax
+    kind: build
+    command: bash -n scripts/healthcheck.sh
+  - name: yaml-parses
+    kind: build
+    command: $ACB_PYTHON -c "import yaml,sys; [yaml.safe_load(open(p)) for p in ['docker-compose.yml','.github/workflows/ci.yml']]"
+  - name: hidden-infra-checks
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_infra.py
+    provides_files:
+      tests/hidden_test_infra.py: hidden/devops-001/hidden_test_infra.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_clean_build: true
+  require_no_regressions: true
+
+language: yaml
+tool_call_budget: 35
+expected_files:
+  - Dockerfile
+  - docker-compose.yml
+  - .github/workflows/ci.yml
+  - scripts/healthcheck.sh
+expected_solution: >
+  Terminal-Bench-style infrastructure repair validated by parsing and inspecting the
+  resulting files rather than by building images, so the task runs without a Docker
+  daemon. Hidden checks verify each specific requirement.
+tags: [docker, ci, shell, devops]

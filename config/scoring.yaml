@@ -1,0 +1,17 @@
+# Composite score weights. All configurable -- and the report always shows the raw metrics
+# next to the composite, because one number hides the trade-offs this project exists to
+# surface.
+#
+# Dimensions a task cannot measure (no linter configured, unknown cost) are dropped and
+# the remaining weights re-normalised, so tasks are not penalised for absent tooling.
+weights:
+  functional_correctness: 0.50   # tests, hidden tests, build, minus regressions
+  code_quality: 0.15             # lint, type-check, static analysis
+  agent_efficiency: 0.15         # tool-call economy, failed calls, repeated reads
+  time: 0.10                     # normalised against the task timeout
+  cost: 0.10                     # normalised across the comparison set
+
+  # Efficiency shaping.
+  default_tool_call_budget: 40   # used when a task sets no tool_call_budget
+  failed_call_penalty: 2.0       # a failed tool call costs 2 "wasted call" units
+  repeated_read_penalty: 1.0     # re-reading the same file costs 1 unit

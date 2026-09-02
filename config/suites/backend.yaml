@@ -1,0 +1,12 @@
+id: backend
+name: Backend suite
+description: >
+  Core software-engineering work on the payment-service fixture: bug fixing, feature
+  work, refactoring, repository understanding and debugging.
+tasks:
+  - payments-bug-001
+  - payments-bug-002
+  - payments-feature-001
+  - payments-refactor-001
+  - payments-understanding-001
+  - payments-debug-001

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "specs": {
+      "command": "python3",
+      "args": [
+        "/Users/guyshaked/Desktop/dev/guy/playground/agentic-coding-bench/mcp_servers/spec_server.py"
+      ]
+    }
+  }
+}

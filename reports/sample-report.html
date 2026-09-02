@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic Coding Benchmark Report</title>
+<style>
+  :root {
+    --bg:#fbfbfa; --panel:#fff; --ink:#1a1a19; --muted:#6b6b68; --line:#e6e5e1;
+    --accent:#b5563a; --ok:#2f7d4f; --warn:#a8791c; --bad:#a83232;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#191917; --panel:#211f1d; --ink:#f0eee9; --muted:#a4a099; --line:#33302c;
+            --accent:#d97757; --ok:#63b37f; --warn:#d4a34a; --bad:#d96a6a; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; padding:2.5rem 1.25rem 5rem; }
+  h1 { font-size:1.9rem; margin:0 0 .3rem; letter-spacing:-.02em; }
+  h2 { font-size:1.15rem; margin:2.6rem 0 .8rem; letter-spacing:-.01em; }
+  .sub { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:1.1rem 1.25rem; margin-bottom:1rem; }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:.88rem; min-width:640px; }
+  th,td { text-align:right; padding:.5rem .65rem; border-bottom:1px solid var(--line);
+          white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; position:sticky; left:0;
+          background:var(--panel); }
+  th { font-weight:600; color:var(--muted); font-size:.78rem; text-transform:uppercase;
+       letter-spacing:.04em; }
+  tbody tr:hover td { background:rgba(127,127,127,.06); }
+  .ok{color:var(--ok);} .warn{color:var(--warn);} .bad{color:var(--bad);}
+  .muted{color:var(--muted);} .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .bar { display:inline-block; height:8px; background:var(--accent); border-radius:4px;
+         vertical-align:middle; margin-right:.4rem; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:.75rem; }
+  .card .k { color:var(--muted); font-size:.75rem; text-transform:uppercase;
+             letter-spacing:.05em; }
+  .card .v { font-size:1.45rem; font-weight:600; margin-top:.15rem; letter-spacing:-.02em; }
+  .note { border-left:3px solid var(--warn); padding:.5rem .85rem; margin:.5rem 0;
+          color:var(--muted); font-size:.85rem; background:rgba(168,121,28,.07);
+          border-radius:0 6px 6px 0; }
+  .scatter { width:100%; height:auto; }
+  .legend { font-size:.8rem; color:var(--muted); margin-top:.4rem; }
+  footer { margin-top:3rem; color:var(--muted); font-size:.8rem;
+           border-top:1px solid var(--line); padding-top:1rem; }
+</style></head><body><div class="wrap">
+
+<h1>Agentic Coding Benchmark</h1>
+<div class="sub">4 runs &middot; 1 targets &middot;
+  3 tasks &middot; generated 2026-09-02T07:39:29.717781+00:00</div>
+
+<div class="cards">
+  <div class="panel card"><div class="k">Best success rate</div>
+    <div class="v">local-sonnet-ambient</div>
+    <div class="muted">100% of tasks solved</div></div>
+  <div class="panel card"><div class="k">Lowest cost / success</div>
+    <div class="v">local-sonnet-ambient</div>
+    <div class="muted">$1.00 per success</div></div>
+  <div class="panel card"><div class="k">Fastest</div>
+    <div class="v">local-sonnet-ambient</div>
+    <div class="muted">51.6s median</div></div>
+</div>
+
+<h2>Overall</h2>
+<div class="panel scroll"><table>
+<thead><tr><th>Target</th><th>Model</th><th>Provider</th><th>Deploy</th><th>Runs</th>
+<th>Success</th><th>95% CI</th><th>Score</th><th>Median time</th><th>Cost/success</th>
+<th>Tool calls</th></tr></thead>
+<tbody>
+
+<tr>
+  <td><strong>local-sonnet-ambient</strong></td>
+  <td class="mono">sonnet</td><td>anthropic-subscription</td><td>subscription</td>
+  <td>4</td>
+  <td class="ok">
+    <span class="bar" style="width:46px"></span>
+    100%</td>
+  <td class="muted">51&ndash;100%</td>
+  <td>0.981</td>
+  <td>51.6s</td>
+  <td>$1.00<span class="warn" title="estimate">*</span></td>
+  <td>18.5</td>
+</tr>
+
+</tbody></table>
+<div class="legend">Cost per successful task = total cost / successful runs. This, not
+token price, is the decision-grade number: a cheap target that fails often costs more.
+<span class="warn">*</span> = estimate (subscription allocation or utilisation assumption).</div>
+</div>
+
+
+
+<h2>Reliability, speed and efficiency</h2>
+<div class="panel scroll"><table>
+<thead><tr><th>Target</th><th>Solved</th><th>Failed</th><th>Timeout</th><th>Error</th>
+<th>p50 time</th><th>p90 time</th><th>Turns</th><th>Failed calls/run</th>
+<th>Repeat reads/run</th><th>Tools/success</th></tr></thead>
+<tbody>
+
+<tr><td><strong>local-sonnet-ambient</strong></td>
+  <td class="ok">4</td><td>0</td>
+  <td class="muted">0</td>
+  <td class="muted">0</td>
+  <td>51.6s</td><td>2m 46s</td>
+  <td>19.5</td>
+  <td class="">0.5</td>
+  <td>0.2</td>
+  <td>18.5</td>
+</tr>
+
+</tbody></table>
+<div class="legend">Failed calls and repeated reads are the clearest signals of weak agentic
+control: they distinguish "cannot write code" from "cannot drive the tools".</div></div>
+
+<h2>Cost breakdown</h2>
+<div class="panel scroll"><table>
+<thead><tr><th>Target</th><th>Pricing</th><th>Total</th><th>Mean/run</th><th>Median/run</th>
+<th>Cost/success</th><th>Cost/failure</th><th>Input tok</th><th>Output tok</th>
+<th>Cached tok</th><th>Cache saving</th></tr></thead>
+<tbody>
+
+<tr><td><strong>local-sonnet-ambient</strong></td><td>subscription</td>
+  <td>$4.00</td>
+  <td>$1.00</td>
+  <td>$1.00</td>
+  <td>$1.00</td>
+  <td>—</td>
+  <td>252</td>
+  <td>846</td>
+  <td>3,426,892</td>
+  <td class="ok">—</td>
+</tr>
+
+</tbody></table>
+<div class="legend">Costs use each run's own pricing snapshot, so historical runs are never
+silently re-priced at today's rates.</div></div>
+
+<h2>By task type</h2>
+<div class="panel scroll"><table>
+<thead><tr><th>Target</th><th>bug_fix</th><th>debugging</th><th>repo_understanding</th></tr></thead>
+<tbody>
+
+<tr><td><strong>local-sonnet-ambient</strong></td>
+
+  
+  <td class="ok">
+    100% <span class="muted">(2/2)</span></td>
+  
+
+  
+  <td class="ok">
+    100% <span class="muted">(1/1)</span></td>
+  
+
+  
+  <td class="ok">
+    100% <span class="muted">(1/1)</span></td>
+  
+
+</tr>
+
+</tbody></table></div>
+
+
+
+<h2>Cost vs quality</h2>
+<div class="panel">
+
+<svg class="scatter" viewBox="0 0 720 360" role="img" aria-label="Cost versus success rate">
+  <line x1="60" y1="310" x2="690" y2="310" stroke="var(--line)" stroke-width="1"/>
+  <line x1="60" y1="30" x2="60" y2="310" stroke="var(--line)" stroke-width="1"/>
+  
+  <line x1="60" y1="310.0" x2="690" y2="310.0" stroke="var(--line)"
+        stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="52" y="314.0" text-anchor="end" font-size="11"
+        fill="var(--muted)">0%</text>
+  
+  <line x1="60" y1="240.0" x2="690" y2="240.0" stroke="var(--line)"
+        stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="52" y="244.0" text-anchor="end" font-size="11"
+        fill="var(--muted)">25%</text>
+  
+  <line x1="60" y1="170.0" x2="690" y2="170.0" stroke="var(--line)"
+        stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="52" y="174.0" text-anchor="end" font-size="11"
+        fill="var(--muted)">50%</text>
+  
+  <line x1="60" y1="100.0" x2="690" y2="100.0" stroke="var(--line)"
+        stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="52" y="104.0" text-anchor="end" font-size="11"
+        fill="var(--muted)">75%</text>
+  
+  <line x1="60" y1="30.0" x2="690" y2="30.0" stroke="var(--line)"
+        stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="52" y="34.0" text-anchor="end" font-size="11"
+        fill="var(--muted)">100%</text>
+  
+  
+  <circle cx="355.0" cy="30.0" r="7" fill="var(--accent)" fill-opacity=".8"/>
+  <text x="366.0" y="34.0" font-size="11" fill="var(--ink)">local-sonnet-ambient</text>
+  
+  <text x="375" y="345" text-anchor="middle" font-size="12" fill="var(--muted)">
+    cost per successful task (USD) &rarr;</text>
+  <text x="18" y="170" text-anchor="middle" font-size="12" fill="var(--muted)"
+        transform="rotate(-90 18 170)">success rate &rarr;</text>
+</svg>
+<div class="legend">Up and to the left is better: high success rate at low cost per success.</div>
+
+</div>
+
+
+<h2>Routing recommendations</h2>
+<div class="panel scroll"><table>
+<thead><tr><th>Task category</th><th>Best quality</th><th>Success</th><th>Best value</th>
+<th>Cost/success</th><th>Verdict</th></tr></thead>
+<tbody>
+
+<tr><td><strong>bug_fix</strong></td>
+  <td>local-sonnet-ambient</td>
+  <td>100%</td>
+  <td>local-sonnet-ambient</td>
+  <td>$1.00</td>
+  <td class="muted">
+    keep the quality leader</td>
+</tr>
+
+<tr><td><strong>debugging</strong></td>
+  <td>local-sonnet-ambient</td>
+  <td>100%</td>
+  <td>local-sonnet-ambient</td>
+  <td>$1.00</td>
+  <td class="muted">
+    keep the quality leader</td>
+</tr>
+
+<tr><td><strong>repo_understanding</strong></td>
+  <td>local-sonnet-ambient</td>
+  <td>100%</td>
+  <td>local-sonnet-ambient</td>
+  <td>$1.00</td>
+  <td class="muted">
+    keep the quality leader</td>
+</tr>
+
+</tbody></table>
+<div class="legend">"Route here to save cost" fires only when the cheaper target's
+confidence interval overlaps the leader's &mdash; i.e. the observed quality gap is not
+statistically resolved at this sample size.</div></div>
+
+
+
+
+<h2>Per-task detail</h2>
+<div class="panel scroll"><table>
+<thead><tr><th>Task</th><th>Target</th><th>Runs</th><th>Success</th><th>Score</th>
+<th>Mean time</th><th>&sigma; time</th><th>Mean cost</th><th>Tool calls</th></tr></thead>
+<tbody>
+
+<tr><td class="mono">payments-bug-001</td><td>local-sonnet-ambient</td><td>2</td>
+  <td class="ok">
+    100%</td>
+  <td>0.995</td>
+  <td>26.6s</td>
+  <td class="muted">0.3s</td>
+  <td>$1.00</td>
+  <td>9.0</td>
+</tr>
+
+<tr><td class="mono">payments-debug-001</td><td>local-sonnet-ambient</td><td>1</td>
+  <td class="ok">
+    100%</td>
+  <td>0.994</td>
+  <td>1m 16s</td>
+  <td class="muted">0.0s</td>
+  <td>$1.00</td>
+  <td>14.0</td>
+</tr>
+
+<tr><td class="mono">payments-understanding-001</td><td>local-sonnet-ambient</td><td>1</td>
+  <td class="ok">
+    100%</td>
+  <td>0.941</td>
+  <td>3m 24s</td>
+  <td class="muted">0.0s</td>
+  <td>$1.00</td>
+  <td>42.0</td>
+</tr>
+
+</tbody></table></div>
+
+<footer>
+Generated by <span class="mono">acb</span> 0.1.0. Composite scores are shown
+alongside the raw metrics that produce them; read both. Confidence intervals are Wilson
+score intervals at 95%. Costs use each run's stored pricing snapshot.
+</footer>
+</div></body></html>

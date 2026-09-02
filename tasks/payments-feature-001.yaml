@@ -1,0 +1,73 @@
+id: payments-feature-001
+name: Add payment cancellation with validation, persistence and tests
+category: feature
+difficulty: medium
+version: 1
+
+repository:
+  path: ./fixtures/payment-service
+  base_commit: main
+  isolation: worktree
+
+task:
+  prompt: |
+    Add the ability to cancel a pending payment.
+
+    Requirements:
+
+    1. Add a `CANCELLED` value to `PaymentStatus`.
+    2. Add `PaymentService.cancel(payment_id: str, reason: str) -> Payment`:
+       - Only payments with status `PENDING` may be cancelled. Cancelling a payment in
+         any other status must raise a new `CancellationNotAllowed` error that derives
+         from `PaymentError`.
+       - `reason` must be a non-empty, non-whitespace string; otherwise raise
+         `ValueError`.
+       - On success set the status to `CANCELLED`, store the reason in the payment's
+         `metadata` under the key `cancellation_reason`, record an audit entry with the
+         action `payment.cancelled`, and send a notification to the account's email with
+         the subject `Payment cancelled`.
+    3. Add `PaymentAPI.cancel_payment(payment_id, payload)` where `payload` carries the
+       `reason`. Return 200 with the serialised payment on success, 409 for
+       `CancellationNotAllowed`, 404 for `PaymentNotFound`, and 400 for a missing or
+       empty reason.
+    4. Add tests covering the success path and every error path.
+    5. Update the repository's README.md to document the new capability.
+
+    Keep the existing architecture: business rules belong in the service layer, and the
+    API layer only parses input and maps errors to status codes.
+
+timeout_minutes: 30
+
+validation:
+  - name: unit-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: lint
+    kind: lint
+    command: $ACB_PYTHON -m ruff check . || true
+  - name: hidden-cancellation-tests
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_cancellation.py
+    provides_files:
+      tests/hidden_test_cancellation.py: hidden/payments-feature-001/hidden_test_cancellation.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_no_regressions: true
+
+language: python
+framework: pytest
+tool_call_budget: 45
+expected_files:
+  - src/payments/domain/models.py
+  - src/payments/domain/errors.py
+  - src/payments/services/payment_service.py
+  - src/payments/api/routes.py
+expected_solution: >
+  Multi-file change touching the domain enum, a new error type, a service method holding
+  the rules, and an API method mapping errors to status codes, plus tests and README
+  updates. Hidden tests verify the exact status codes, audit action string, notification
+  subject and metadata key.
+tags: [python, backend, feature, multi-file]

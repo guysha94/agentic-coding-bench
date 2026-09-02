@@ -1,0 +1,11 @@
+id: agentic
+name: Agentic stress suite
+description: >
+  The tasks that most sharply separate models on agentic reasoning and tool use rather
+  than raw code generation: multi-step planning, MCP retrieval, large-context tracking
+  and terminal/DevOps work.
+tasks:
+  - payments-multistep-001
+  - payments-mcp-001
+  - payments-largectx-001
+  - devops-001

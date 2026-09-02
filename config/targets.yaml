@@ -1,0 +1,150 @@
+# Benchmark targets: model x provider x deployment x pricing model.
+#
+# IMPORTANT: every price below is a PLACEHOLDER (0.00 / null). Fill them in from your
+# provider's current price list before drawing cost conclusions. The framework never
+# hardcodes prices in source, and a `null` rate means UNKNOWN -- runs priced with a null
+# rate are flagged `incomplete` rather than silently reported as cheap.
+#
+# Model identifiers are free-form strings. Provider model ids change; do not assume names
+# like "GLM-5.3" or "Kimi-3" are stable.
+
+targets:
+
+  # ---------------------------------------------------------------- Anthropic API ----
+  claude-opus-anthropic:
+    model: opus
+    model_family: claude-opus
+    provider: anthropic
+    deployment_type: api
+    adapter: anthropic
+    api_key_env: ANTHROPIC_API_KEY
+    model_params:
+      effort: high
+    pricing:
+      type: token
+      currency: USD
+      effective_date: null          # set to the date you copied these rates
+      source: null                  # e.g. "https://www.anthropic.com/pricing"
+      input_per_million_tokens: 0.00
+      output_per_million_tokens: 0.00
+      cached_input_per_million_tokens: null
+      cache_write_per_million_tokens: null
+      reasoning_per_million_tokens: null
+
+  claude-sonnet-anthropic:
+    model: sonnet
+    model_family: claude-sonnet
+    provider: anthropic
+    deployment_type: api
+    adapter: anthropic
+    api_key_env: ANTHROPIC_API_KEY
+    pricing:
+      type: token
+      currency: USD
+      input_per_million_tokens: 0.00
+      output_per_million_tokens: 0.00
+      cached_input_per_million_tokens: null
+      cache_write_per_million_tokens: null
+
+  # ------------------------------------------------------- open weights, API-hosted --
+  # NOTE: Claude Code speaks the Anthropic Messages API only. An OpenAI-compatible
+  # provider therefore needs a translating proxy at `endpoint`. That proxy becomes part
+  # of the system under test -- see docs/claude-code-model-replacement.md Sec 3.
+  glm-fireworks:
+    model: accounts/fireworks/models/REPLACE-WITH-GLM-MODEL-ID
+    model_family: glm
+    provider: fireworks
+    deployment_type: api
+    adapter: openai_compat
+    endpoint: http://localhost:8080/v1        # Anthropic-compatible shim -> Fireworks
+    api_key_env: FIREWORKS_API_KEY
+    pricing:
+      type: token
+      currency: USD
+      effective_date: null
+      input_per_million_tokens: 0.00
+      output_per_million_tokens: 0.00
+      cached_input_per_million_tokens: null
+      cache_write_per_million_tokens: null
+      reasoning_per_million_tokens: null
+
+  kimi-fireworks:
+    model: accounts/fireworks/models/REPLACE-WITH-KIMI-MODEL-ID
+    model_family: kimi
+    provider: fireworks
+    deployment_type: api
+    adapter: openai_compat
+    endpoint: http://localhost:8080/v1
+    api_key_env: FIREWORKS_API_KEY
+    pricing:
+      type: token
+      currency: USD
+      input_per_million_tokens: 0.00
+      output_per_million_tokens: 0.00
+      cached_input_per_million_tokens: null
+      cache_write_per_million_tokens: null
+
+  # ----------------------------------------------------------- open weights, hosted --
+  glm-self-hosted:
+    model: REPLACE-WITH-LOCAL-MODEL-ID
+    model_family: glm
+    provider: internal
+    deployment_type: self_hosted
+    adapter: openai_compat
+    endpoint: http://gpu-server:8000/v1
+    api_key_env: SELF_HOSTED_API_KEY
+    pricing:
+      type: infrastructure
+      currency: USD
+      gpu:
+        type: B200
+        count: 4
+        hourly_cost_per_gpu: 0.00     # your negotiated/cloud rate
+      additional_machine_hourly_cost: 0.00
+      utilization_assumption: 0.40    # report both marginal and effective cost
+      # Optional extensibility hooks:
+      # minimum_billing_seconds: 60
+      # discount_multiplier: 1.0      # e.g. 0.4 for a 60% spot discount
+      # storage_hourly_cost: 0.00
+      # network_cost_per_run: 0.00
+
+  kimi-self-hosted:
+    model: REPLACE-WITH-LOCAL-MODEL-ID
+    model_family: kimi
+    provider: internal
+    deployment_type: self_hosted
+    adapter: openai_compat
+    endpoint: http://gpu-server:8001/v1
+    api_key_env: SELF_HOSTED_API_KEY
+    pricing:
+      type: infrastructure
+      currency: USD
+      gpu:
+        type: B200
+        count: 4
+        hourly_cost_per_gpu: 0.00
+      additional_machine_hourly_cost: 0.00
+      utilization_assumption: 0.40
+
+  # -------------------------------------------------------------------- subscription --
+  # Subscription auth lives in the operator's own config, so config-dir isolation must be
+  # disabled. That reduces reproducibility (ambient tools/MCP/plugins can leak in) and the
+  # caveat is recorded in every run's metadata. Disabled by default.
+  claude-code-subscription:
+    model: opus
+    model_family: claude-opus
+    provider: anthropic-subscription
+    deployment_type: subscription
+    adapter: anthropic
+    isolate_config_dir: false
+    enabled: false
+    notes: >
+      Uses ambient OAuth credentials. Enable only when you accept reduced isolation;
+      compare against API targets with care.
+    pricing:
+      type: subscription
+      currency: USD
+      monthly_cost: 0.00
+      allocation_strategy: active_user
+      seats: 1
+      tasks_per_month: 200

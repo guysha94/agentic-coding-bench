@@ -1,0 +1,69 @@
+id: payments-mcp-001
+name: Implement refunds from an external Jira ticket and Confluence spec
+category: mcp
+difficulty: hard
+version: 1
+
+repository:
+  path: ./fixtures/payment-service
+  base_commit: main
+  isolation: worktree
+
+task:
+  prompt: |
+    Implement the work described in Jira ticket PAY-142.
+
+    You have MCP tools available for Jira and Confluence. The ticket and its linked
+    specification page contain the authoritative requirements — the repository does not
+    describe them, and several rules deliberately differ from the existing charge flow, so
+    do not infer the behaviour from the existing code.
+
+    Retrieve the ticket, follow its links to the specification, implement exactly what the
+    specification requires, and add tests.
+
+timeout_minutes: 35
+
+validation:
+  - name: unit-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: lint
+    kind: lint
+    command: $ACB_PYTHON -m ruff check . || true
+  - name: hidden-refund-spec-tests
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_refund_spec.py
+    provides_files:
+      tests/hidden_test_refund_spec.py: hidden/payments-mcp-001/hidden_test_refund_spec.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_no_regressions: true
+
+mcp:
+  config_file: ./config/mcp/spec.json
+  required_servers: [specs]
+  expected_tools:
+    - mcp__specs__get_jira_issue
+    - mcp__specs__get_confluence_page
+  forbidden_tools: []
+  max_calls: 8
+
+language: python
+framework: pytest
+required_tools: [Bash, Read, Write, Edit, Glob, Grep, TodoWrite]
+tool_call_budget: 50
+expected_files:
+  - src/payments/services/payment_service.py
+  - src/payments/domain/errors.py
+  - src/payments/api/routes.py
+expected_solution: >
+  The refund rules exist ONLY in the MCP corpus, so this task cannot be solved without
+  correctly choosing the Jira tool, following the link to the Confluence page, and
+  applying rules that contradict the local code (notably: the processing fee is NOT
+  refunded, and a partial refund leaves the status CAPTURED). Hidden tests target exactly
+  those non-obvious rules.
+requires_network: false
+tags: [python, mcp, external-context, hard]
