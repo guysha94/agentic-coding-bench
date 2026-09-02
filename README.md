@@ -22,6 +22,10 @@ uv sync
 ```
 
 ```bash
+uv run benchmark init      # unpacks fixture repos from bundles, creates the database
+```
+
+```bash
 uv run benchmark doctor
 ```
 
@@ -119,7 +123,8 @@ time*; `benchmark report --reprice-current` is an explicit opt-in what-if.
 ## Commands
 
 ```bash
-benchmark init                       # create dirs + database, register config
+benchmark init                       # unpack fixtures, create database, register config
+benchmark fixtures [--refresh|--force] # manage fixture repositories
 benchmark doctor                     # verify the environment before spending money
 benchmark validate                   # check task/target config without running
 benchmark list tasks|targets|suites
@@ -174,6 +179,12 @@ Ten tasks across nine categories, on two fixture repositories
 | `payments-largectx-001` | large context | hard |
 
 Suites: `smoke` (2 fast tasks), `backend` (6), `agentic` (4 hardest), `full` (all 10).
+
+Fixtures must be git repositories (runs start from an exact commit, and task-specific
+starting states live on branches), but a nested git repo cannot be committed into the outer
+one. They are therefore distributed as **git bundles** in `fixtures/bundles/` and unpacked
+by `benchmark init`. After editing a fixture, commit inside it and run
+`benchmark fixtures --refresh` to regenerate its bundle.
 
 Every task is graded by objective validation commands plus **hidden tests** that are copied
 in only after the agent finishes. Each hidden suite has been verified to *fail* on the

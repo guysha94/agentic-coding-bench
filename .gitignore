@@ -221,3 +221,9 @@ __marimo__/
 /runs/
 /acb.sqlite3
 /reports/report.*
+
+# Fixture working repositories are materialised from tracked bundles by
+# `benchmark init` (a nested git repo cannot be committed into the outer one).
+/fixtures/*
+!/fixtures/bundles/
+!/fixtures/bundles/*.bundle

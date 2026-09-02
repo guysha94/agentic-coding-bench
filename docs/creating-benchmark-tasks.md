@@ -157,6 +157,28 @@ bug/history-crash     main + a crashing legacy importer + the on-call report
 A task then sets `base_commit: bug/idempotency`. Refs are resolved to full SHAs and
 recorded per run, so this stays reproducible.
 
+### Fixtures are distributed as bundles
+
+A nested git repository cannot be committed into the outer one — git stores a gitlink and a
+fresh clone gets an empty directory. So fixtures live in version control as **git bundles**
+(`fixtures/bundles/*.bundle`), which capture full history and every branch in one tracked
+file:
+
+```bash
+benchmark init                 # unpack bundles -> working fixture repos (also on first setup)
+benchmark fixtures             # show fixture state and branches
+benchmark fixtures --force     # re-clone, discarding local fixture changes
+```
+
+After changing a fixture, **commit inside the fixture repo**, then regenerate its bundle:
+
+```bash
+benchmark fixtures --refresh
+```
+
+This refuses to run against a dirty fixture, so a bundle can never disagree with what runs
+actually execute. Commit the regenerated `.bundle` alongside your task.
+
 ---
 
 ## MCP tasks

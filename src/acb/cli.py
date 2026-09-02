@@ -19,6 +19,7 @@ from acb import __version__
 from acb.adapters.registry import available_adapters, get_adapter
 from acb.config import Paths, Workspace
 from acb.db.repository import Database
+from acb.fixtures import FixtureError, materialize, missing_fixtures, refresh_bundles
 from acb.models.task import KNOWN_CATEGORIES
 from acb.report.aggregate import build_comparison
 from acb.report.breakeven import analyze_break_even
@@ -87,6 +88,21 @@ def init(
     for d in (paths.tasks_dir, paths.suites_dir, paths.config_dir, paths.runs_dir,
               paths.reports_dir, paths.fixtures_dir):
         d.mkdir(parents=True, exist_ok=True)
+
+    # Fixtures ship as git bundles, because a nested git repository cannot be committed
+    # into the outer one. Unpack them into working repositories.
+    try:
+        for status in materialize(paths.root):
+            if status.materialized:
+                console.print(
+                    f"[green]✓[/green] fixture {status.name} materialised "
+                    f"[dim]({len(status.branches)} branch(es))[/dim]"
+                )
+            else:
+                console.print(f"[dim]· fixture {status.name} already present[/dim]")
+    except FixtureError as exc:
+        console.print(f"[red]✗[/red] fixture setup failed: {exc}")
+        raise typer.Exit(1) from exc
 
     db = Database(paths.db_path)
     applied = db.migrate()
@@ -210,6 +226,12 @@ def doctor(
     check("adapters", True, ", ".join(available_adapters()))
 
     console.print("\n[bold]Fixtures[/bold]")
+    for name in missing_fixtures(ws.paths.root):
+        check(
+            f"fixture {name}",
+            False,
+            "bundle present but not materialised -- run `benchmark init`",
+        )
     seen: set[Path] = set()
     for task in ws.tasks.values():
         repo = (ws.paths.root / task.repository.path).resolve()
@@ -699,6 +721,38 @@ def prune(
     if workspaces:
         n = prune_workspaces()
         console.print(f"[green]✓[/green] removed {n} leftover workspace(s)")
+
+
+@app.command()
+def fixtures(
+    refresh: Annotated[
+        bool,
+        typer.Option(
+            "--refresh",
+            help="Regenerate bundles FROM the working fixture repos (after editing one).",
+        ),
+    ] = False,
+    force: Annotated[
+        bool, typer.Option("--force", help="Re-clone fixtures, discarding local changes.")
+    ] = False,
+    root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Materialise fixture repositories from their bundles, or regenerate the bundles."""
+    paths = Paths.resolve(root)
+    try:
+        if refresh:
+            for bundle in refresh_bundles(paths.root):
+                console.print(f"[green]✓[/green] regenerated {bundle.relative_to(paths.root)}")
+            return
+        for status in materialize(paths.root, force=force):
+            state = "materialised" if status.materialized else "already present"
+            console.print(
+                f"[green]✓[/green] {status.name} [dim]{state}; branches: "
+                f"{', '.join(status.branches)}[/dim]"
+            )
+    except FixtureError as exc:
+        console.print(f"[red]✗[/red] {exc}")
+        raise typer.Exit(1) from exc
 
 
 @app.command()
