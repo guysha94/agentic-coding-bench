@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Benchmark outputs
+/runs/
+/acb.sqlite3
+/reports/report.*
