@@ -1,0 +1,71 @@
+id: payments-multistep-001
+name: Plan and deliver per-currency daily limits end to end
+category: multi_step
+difficulty: hard
+version: 1
+
+repository:
+  path: ./fixtures/payment-service
+  base_commit: main
+  isolation: worktree
+
+task:
+  prompt: |
+    Daily spend limits are currently a single Money value per account, which breaks as
+    soon as an account transacts in more than one currency: today a EUR payment is
+    compared against a USD limit.
+
+    Deliver per-currency daily limits.
+
+    1. Investigate how limits, currencies and payments interact today. Note that
+       `Money.__sub__` and `Money.__add__` already reject currency mismatches.
+    2. Replace `Account.daily_limit` with `Account.daily_limits: dict[Currency, Money]`.
+    3. `PaymentService._check_daily_limit` must compare a payment against the limit for
+       that payment's own currency, and must only count same-currency payments toward it.
+    4. When an account has no limit configured for a payment's currency, fall back to a
+       module-level `DEFAULT_DAILY_LIMITS` mapping in the repositories module, seeded with
+       10000 for each of USD, EUR and GBP.
+    5. Update the seeded accounts so `acc_1` has a USD limit of 10000 and a EUR limit of
+       2000.
+    6. Update every caller and test that touches `daily_limit`.
+    7. Add tests covering: the limit being enforced per currency, payments in one currency
+       not consuming another currency's headroom, and the default fallback.
+
+    Work in phases: understand the current behaviour first, then implement, then run the
+    tests and fix what breaks. The existing test suite must pass when you are done.
+
+timeout_minutes: 40
+
+validation:
+  - name: unit-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: lint
+    kind: lint
+    command: $ACB_PYTHON -m ruff check .
+  - name: hidden-currency-limit-tests
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_currency_limits.py
+    provides_files:
+      tests/hidden_test_currency_limits.py: hidden/payments-multistep-001/hidden_test_currency_limits.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_lint_pass: true
+  require_no_regressions: true
+
+language: python
+framework: pytest
+tool_call_budget: 70
+expected_files:
+  - src/payments/domain/models.py
+  - src/payments/repositories/memory.py
+  - src/payments/services/payment_service.py
+expected_solution: >
+  A cross-cutting change requiring genuine planning: a domain model change that ripples
+  into repositories, the service's limit check, the seed data and the existing tests. The
+  interesting failure mode is partial migration -- updating the model but leaving a caller
+  on the old attribute.
+tags: [python, multi-step, planning, currency]

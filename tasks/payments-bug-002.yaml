@@ -1,0 +1,56 @@
+id: payments-bug-002
+name: Fix duplicate charging on retried payments
+category: bug_fix
+difficulty: medium
+version: 1
+
+repository:
+  path: ./fixtures/payment-service
+  base_commit: bug/idempotency
+  isolation: worktree
+
+task:
+  prompt: |
+    Users can occasionally be charged twice when the same payment request is retried.
+    The API accepts an `idempotency_key`, and the repository already has a lookup for it,
+    but retrying a charge with a key that has been used before still creates a second
+    payment and debits the account again.
+
+    Reproduce the problem, find the root cause, and fix it so that retrying with the same
+    idempotency key returns the original payment without charging again. Charges made
+    without an idempotency key must keep their current behaviour.
+
+    Do not modify the tests.
+
+timeout_minutes: 20
+
+validation:
+  - name: unit-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: lint
+    kind: lint
+    command: $ACB_PYTHON -m ruff check . || true
+  - name: hidden-idempotency-tests
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_idempotency.py
+    provides_files:
+      tests/hidden_test_idempotency.py: hidden/payments-bug-002/hidden_test_idempotency.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_no_regressions: true
+
+language: python
+framework: pytest
+tool_call_budget: 25
+expected_files:
+  - src/payments/services/payment_service.py
+expected_solution: >
+  PaymentService.charge never consults PaymentRepository.find_by_idempotency_key. The fix
+  is an early lookup that returns the existing payment when the key has been seen, before
+  any balance mutation. Hidden tests additionally check that no duplicate audit entry or
+  notification is emitted, and that a replayed key does not consume daily-limit headroom.
+tags: [python, backend, idempotency, concurrency]

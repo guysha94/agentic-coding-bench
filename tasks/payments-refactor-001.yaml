@@ -1,0 +1,65 @@
+id: payments-refactor-001
+name: Extract a notification-template layer and remove duplicated construction
+category: refactor
+difficulty: medium
+version: 1
+
+repository:
+  path: ./fixtures/payment-service
+  base_commit: main
+  isolation: worktree
+
+task:
+  prompt: |
+    `PaymentService` builds notification subjects and bodies inline, mixing message
+    formatting into payment orchestration. As more payment operations are added this
+    duplication will spread.
+
+    Refactor so that message construction lives in its own seam:
+
+    1. Add a `payments.services.templates` module exposing a `NotificationTemplates`
+       class with a `payment_captured(payment, account)` method that returns the
+       `(subject, body)` pair currently built inline in `PaymentService.charge`.
+    2. Inject `NotificationTemplates` into `PaymentService` via its constructor with a
+       working default, so existing callers keep working unchanged.
+    3. `PaymentService` must no longer build notification text itself.
+    4. Externally observable behaviour must not change: the same recipient, subject and
+       body are produced as before.
+
+    This is a behaviour-preserving refactor. Do not change the public API of
+    `PaymentService.charge`, and do not modify the existing tests.
+
+timeout_minutes: 25
+
+validation:
+  - name: unit-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: lint
+    kind: lint
+    command: $ACB_PYTHON -m ruff check .
+  - name: hidden-refactor-tests
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_refactor.py
+    provides_files:
+      tests/hidden_test_refactor.py: hidden/payments-refactor-001/hidden_test_refactor.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_lint_pass: true
+  require_no_regressions: true
+
+language: python
+framework: pytest
+tool_call_budget: 35
+expected_files:
+  - src/payments/services/templates.py
+  - src/payments/services/payment_service.py
+expected_solution: >
+  Introduce a templates module, inject it with a default, and delegate. Hidden tests
+  confirm behaviour is preserved, that the seam is genuinely injectable (a custom
+  templates object changes the output), and that PaymentService no longer contains the
+  message text.
+tags: [python, refactor, dependency-injection]

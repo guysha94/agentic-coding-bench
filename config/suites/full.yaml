@@ -1,0 +1,16 @@
+id: full
+name: Full proof-of-concept suite
+description: >
+  All ten tasks across nine categories. This is the suite to run for a decision-grade
+  comparison; expect it to be the most expensive.
+tasks:
+  - payments-bug-001
+  - payments-bug-002
+  - payments-feature-001
+  - payments-refactor-001
+  - payments-understanding-001
+  - payments-debug-001
+  - devops-001
+  - payments-mcp-001
+  - payments-multistep-001
+  - payments-largectx-001

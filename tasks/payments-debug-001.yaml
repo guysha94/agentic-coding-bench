@@ -1,0 +1,59 @@
+id: payments-debug-001
+name: Debug a 500 on the payment history endpoint after the legacy backfill
+category: debugging
+difficulty: medium
+version: 1
+
+repository:
+  path: ./fixtures/payment-service
+  base_commit: bug/history-crash
+  isolation: worktree
+
+task:
+  prompt: |
+    The payment history endpoint started returning 500s in production right after the
+    legacy ledger backfill was enabled. The on-call stack trace and notes are below.
+
+    Investigate, find the root cause, and fix it so history works for accounts that mix
+    legacy and live payments. Preserve the existing ordering guarantee (oldest first) and
+    keep the timestamps semantically correct — do not simply strip timezone information
+    from payments that legitimately have it, and do not delete or skip legacy rows.
+
+    Do not modify the tests.
+
+  context_files:
+    - CRASH_REPORT.txt
+
+timeout_minutes: 25
+
+validation:
+  - name: unit-tests
+    kind: test
+    command: $ACB_PYTHON -m pytest
+  - name: lint
+    kind: lint
+    command: $ACB_PYTHON -m ruff check . || true
+  - name: hidden-timestamp-tests
+    kind: test
+    hidden: true
+    command: $ACB_PYTHON -m pytest tests/hidden_test_timestamps.py
+    provides_files:
+      tests/hidden_test_timestamps.py: hidden/payments-debug-001/hidden_test_timestamps.py
+
+success:
+  require_tests_pass: true
+  require_hidden_tests_pass: true
+  require_no_regressions: true
+
+language: python
+framework: pytest
+tool_call_budget: 30
+expected_files:
+  - src/payments/services/legacy_import.py
+expected_solution: >
+  The legacy importer parses naive local timestamps, so sorting mixes naive and aware
+  datetimes. The correct fix attaches a timezone at the import boundary (treating legacy
+  local times as UTC), rather than stripping tzinfo from live payments or sorting on a
+  surrogate key. Hidden tests check that live payments keep their tzinfo and that legacy
+  payments become timezone-aware with the same wall-clock instant.
+tags: [python, debugging, datetime, integration]
